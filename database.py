@@ -16,16 +16,6 @@ def criar_tabelas():
         )
     """)
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS alertas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            produto TEXT,
-            loja TEXT,
-            url TEXT,
-            tipo TEXT
-        )
-    """)
-
     conn.commit()
     conn.close()
 
@@ -61,11 +51,3 @@ def pegar_media_preco(produto, url):
     conn.close()
 
     return resultado
-
-
-def alerta_ja_enviado_recentemente(produto, loja, url, tipo):
-    return False
-
-
-def salvar_alerta(produto, loja, url, tipo, preco=None):
-    pass
