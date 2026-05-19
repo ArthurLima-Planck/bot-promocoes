@@ -1,3 +1,8 @@
+from database import criar_tabelas, salvar_verificacao
+from scraper import verificar_link
+from telegram_alert import enviar_telegram, enviar_log
+
+
 def carregar_produtos():
     produtos = []
     produto_atual = None
@@ -46,3 +51,86 @@ def carregar_produtos():
         produtos.append(produto_atual)
 
     return produtos
+
+
+def verificar_produtos():
+    produtos = carregar_produtos()
+
+    for produto in produtos:
+        nome = produto["nome"]
+        queda_minima = produto["queda_percentual"]
+
+        resultados_validos = []
+        relatorio = f"🔍 Verificando: {nome}\n\n"
+
+        for item in produto["links"]:
+            loja = item["loja"]
+            url = item["url"]
+
+            resultado = verificar_link(url)
+
+            status = resultado["status"]
+            preco = resultado["preco"]
+            erro = resultado["erro"]
+
+            salvar_verificacao(nome, loja, url, preco, status)
+
+            if preco:
+                resultados_validos.append({
+                    "loja": loja,
+                    "url": url,
+                    "preco": preco
+                })
+
+                relatorio += f"✅ {loja}: R$ {preco:.2f}\n"
+            else:
+                relatorio += f"⚠️ {loja}: sem preço ({status})\n"
+
+        if len(resultados_validos) < 2:
+            relatorio += "\n❌ Não tem preços suficientes para calcular média."
+            enviar_log(relatorio)
+            continue
+
+        media = sum(item["preco"] for item in resultados_validos) / len(resultados_validos)
+
+        relatorio += f"\n📊 Média: R$ {media:.2f}\n"
+        relatorio += f"📉 Queda mínima configurada: {queda_minima}%\n\n"
+
+        achou_promocao = False
+
+        for item in resultados_validos:
+            loja = item["loja"]
+            url = item["url"]
+            preco = item["preco"]
+
+            queda = ((media - preco) / media) * 100
+
+            relatorio += f"{loja}: {queda:.1f}% abaixo/acima da média\n"
+
+            if queda >= queda_minima:
+                achou_promocao = True
+
+                enviar_telegram(
+                    f"🔥 PROMOÇÃO ENCONTRADA\n\n"
+                    f"Produto: {nome}\n"
+                    f"Loja: {loja}\n"
+                    f"Preço: R$ {preco:.2f}\n"
+                    f"Média: R$ {media:.2f}\n"
+                    f"Queda: {queda:.1f}%\n\n"
+                    f"{url}"
+                )
+
+        if not achou_promocao:
+            relatorio += "\n✅ Nenhuma promoção forte encontrada."
+
+        enviar_log(relatorio)
+
+
+def main():
+    criar_tabelas()
+    verificar_produtos()
+    print("Finalizado")
+
+
+if __name__ == "__main__":
+    main()
