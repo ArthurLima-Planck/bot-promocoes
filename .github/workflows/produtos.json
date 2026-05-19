@@ -1,1 +1,13 @@
-
+[
+  {
+    "nome": "PlayStation 5",
+    "preco_alerta": 3500,
+    "queda_percentual": 15,
+    "links": [
+      {
+        "loja": "Amazon",
+        "url": "https://www.amazon.com.br/"
+      }
+    ]
+  }
+]
