@@ -16,11 +16,16 @@ def numero_para_float(texto):
     match = re.search(r"\d{1,3}(?:\.\d{3})*,\d{2}", texto)
     if not match:
         match = re.search(r"\d+,\d{2}", texto)
+    if not match:
+        match = re.search(r"R\$\s?(\d+)", texto)
+    if not match:
+        match = re.search(r"\b\d{2,6}\b", texto)
 
     if not match:
         return None
 
     valor = match.group()
+    valor = valor.replace("R$", "").strip()
     valor = valor.replace(".", "").replace(",", ".")
 
     try:
@@ -36,6 +41,9 @@ def extrair_id_mercado_livre(url):
     if "wid" in query:
         return query["wid"][0]
 
+    if "item_id" in query:
+        return query["item_id"][0]
+
     match = re.search(r"(MLB\d+)", url)
 
     if match:
@@ -44,47 +52,40 @@ def extrair_id_mercado_livre(url):
     return None
 
 
-def extrair_preco_mercado_livre_html(soup):
-    seletores = [
-        "meta[property='og:title']",
-        "meta[name='twitter:title']",
-        "meta[itemprop='price']",
-        "[itemprop='price']",
-        ".andes-money-amount__fraction",
-        ".ui-pdp-price__second-line .andes-money-amount__fraction",
-        ".ui-pdp-price .andes-money-amount__fraction"
-    ]
+def extrair_preco_mercado_livre_api(url):
+    item_id = extrair_id_mercado_livre(url)
 
-    for seletor in seletores:
-        elemento = soup.select_one(seletor)
+    if not item_id:
+        print("Mercado Livre: ID não encontrado na URL")
+        return None
 
-        if elemento:
-            content = elemento.get("content")
+    api_url = f"https://api.mercadolibre.com/items/{item_id}"
 
-            if content:
-                preco = numero_para_float(content)
+    try:
+        response = requests.get(
+            api_url,
+            timeout=20,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/json"
+            }
+        )
 
-                if preco:
-                    return preco
+        if response.status_code != 200:
+            print("Erro API Mercado Livre:", response.status_code, response.text)
+            return None
 
-                match = re.search(r"R\$\s?(\d+)", content)
+        dados = response.json()
+        preco = dados.get("price")
 
-                if match:
-                    return float(match.group(1))
+        if preco:
+            return float(preco)
 
-            texto = elemento.get_text().replace(".", "").strip()
+        return None
 
-            if texto.isdigit():
-                return float(texto)
-
-    texto_html = soup.get_text(" ", strip=True)
-
-    match = re.search(r'"price":\s?(\d+(?:\.\d+)?)', str(soup))
-
-    if match:
-        return float(match.group(1))
-
-    return None
+    except Exception as erro:
+        print("Erro Mercado Livre API:", erro)
+        return None
 
 
 def pegar_html_requests(url):
@@ -158,7 +159,7 @@ def pegar_json_ld(soup):
 def procurar_preco_em_json(obj):
     if isinstance(obj, dict):
         for chave, valor in obj.items():
-            if chave.lower() in ["price", "lowprice", "highprice"]:
+            if chave.lower() in ["price", "lowprice", "highprice", "actual_price", "localitemprice", "local_item_price"]:
                 try:
                     return float(valor)
                 except:
@@ -206,7 +207,8 @@ def extrair_preco_amazon(soup):
         "#corePrice_feature_div .a-offscreen",
         "#corePriceDisplay_desktop_feature_div .a-offscreen",
         "#priceblock_ourprice",
-        "#priceblock_dealprice"
+        "#priceblock_dealprice",
+        "span.a-price-whole"
     ]
 
     for seletor in seletores:
@@ -224,11 +226,35 @@ def extrair_preco_amazon(soup):
         if preco:
             return preco
 
+    html = str(soup)
+
+    padroes = [
+        r'"price"\s*:\s*"?(?P<preco>\d+(?:\.\d+)?)"?',
+        r'"displayPrice"\s*:\s*"R\$\s?(?P<preco>\d{1,3}(?:\.\d{3})*,\d{2})"',
+        r'R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}'
+    ]
+
+    for padrao in padroes:
+        resultado = re.search(padrao, html)
+
+        if resultado:
+            if "preco" in resultado.groupdict():
+                valor = resultado.group("preco")
+            else:
+                valor = resultado.group()
+
+            preco = numero_para_float(valor)
+
+            if preco:
+                return preco
+
     return None
 
 
 def extrair_preco_mercado_livre_html(soup):
     seletores = [
+        "meta[property='og:title']",
+        "meta[name='twitter:title']",
         "meta[itemprop='price']",
         "[itemprop='price']",
         ".andes-money-amount__fraction",
@@ -243,15 +269,36 @@ def extrair_preco_mercado_livre_html(soup):
             content = elemento.get("content")
 
             if content:
-                try:
-                    return float(content)
-                except:
-                    pass
+                preco = numero_para_float(content)
+
+                if preco:
+                    return preco
 
             texto = elemento.get_text().replace(".", "").strip()
 
             if texto.isdigit():
                 return float(texto)
+
+    html = str(soup)
+
+    padroes = [
+        r'"price"\s*:\s*(\d+(?:\.\d+)?)',
+        r'"localItemPrice"\s*:\s*(\d+(?:\.\d+)?)',
+        r'"itemPrice"\s*:\s*(\d+(?:\.\d+)?)',
+        r'"actual_price"\s*:\s*(\d+(?:\.\d+)?)',
+        r'R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}',
+        r'R\$\s?(\d+)'
+    ]
+
+    for padrao in padroes:
+        resultado = re.search(padrao, html)
+
+        if resultado:
+            valor = resultado.group(1) if resultado.groups() else resultado.group()
+            preco = numero_para_float(valor)
+
+            if preco:
+                return preco
 
     for dados in pegar_json_ld(soup):
         preco = procurar_preco_em_json(dados)
