@@ -1,1 +1,17 @@
+produto: PlayStation 5
+queda: 12
+loja: Amazon
+url: LINK_DO_PS5_AMAZON
+loja: Mercado Livre
+url: LINK_DO_PS5_MERCADO_LIVRE
+loja: Kabum
+url: LINK_DO_PS5_KABUM
 
+produto: iPhone 15
+queda: 10
+loja: Amazon
+url: LINK_IPHONE_AMAZON
+loja: Magalu
+url: LINK_IPHONE_MAGALU
+loja: Casas Bahia
+url: LINK_IPHONE_CASAS_BAHIA
