@@ -1,28 +1,32 @@
-nome: Verificar preços
+name: Verificar preços
 
-em:
- agendar:
-    - cron: "0*****"
- fluxo de trabalho_despacho:
+on:
+  schedule:
+    - cron: "0 * * * *"
 
-empregadores:
- verificar preços:
- continua correndo: ubuntu-mais recente
+  workflow_dispatch:
 
- etapas:
-      - nome: Baixar código
- usos: nomeações/checkout@v4
+jobs:
+  verificar:
 
-ações/checkout@v4nome:   usosusosPython Instalar
- usos:   comunicações/setup-python@v5
-comunicações/setup-python@v5:
- versão python: "3.11"
+    runs-on: ubuntu-latest
 
- Dependências instaladasnomenome: Dependências instaladas
- corretor: nomeip install -r requisitos.txt
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
 
-pip install -r requisitos.txtnome:  ambienteRobô Rodar
-ambienteRobô Rodar:
- TOKEN_TELEGRAMA: ${{ segredos.TELEGRAM_TOKEN }}
- TELEGRAM_CHAT_ID: ${{ segredos.TELEGRAM_CHAT_ID }}
- corretor: python main.py
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Rodar bot
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+        run: python main.py
