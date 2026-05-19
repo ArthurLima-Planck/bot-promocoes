@@ -1,74 +1,71 @@
-importar sqlite3
+import sqlite3
 
 
 def criar_tabelas():
- conn = sqlite3.conectar("promocoes.db")
+    conn = sqlite3.connect("promocoes.db")
+    cursor = conn.cursor()
 
- cursor = conn.cursor()
-
- cursor.executar("""
- CRIAR TABELA SE NÃO EXISTIR historico_precos (
- id INTEIRO CHAVE PRIMÁRIA AUTOINCREMENTO,
- texto do produto,
- loja TEXTO,
- url TEXTO,
- preco REAL,
- texto de status
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS historico_precos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto TEXT,
+            loja TEXT,
+            url TEXT,
+            preco REAL,
+            status TEXT
         )
- """)
+    """)
 
- cursor.executar("""
- CRIAR TABELA SE NÃO EXISTIR alertas (
- id INTEIRO CHAVE PRIMÁRIA AUTOINCREMENTO,
- texto do produto,
- loja TEXTO,
- url TEXTO,
- tipo TEXTO
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS alertas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto TEXT,
+            loja TEXT,
+            url TEXT,
+            tipo TEXT
         )
- """)
+    """)
 
- conexão.comprometer-se()
- conexão.fechar()
+    conn.commit()
+    conn.close()
 
 
 def salvar_verificacao(produto, loja, url, preco, status):
- conn = sqlite3.conectar("promocoes.db")
+    conn = sqlite3.connect("promocoes.db")
+    cursor = conn.cursor()
 
- cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO historico_precos
+        (produto, loja, url, preco, status)
+        VALUES (?, ?, ?, ?, ?)
+    """, (produto, loja, url, preco, status))
 
- cursor.executar("""
- INSERIR EM histórico_precos
- (produto, loja, url, preco, status)
- VALORES (?,?,?,?,?)
- """, (produto, loja, url, preco, status))
-
- conexão.comprometer-se()
- conexão.fechar()
+    conn.commit()
+    conn.close()
 
 
 def pegar_media_preco(produto, url):
- conn = sqlite3.conectar("promocoes.db")
+    conn = sqlite3.connect("promocoes.db")
+    cursor = conn.cursor()
 
- cursor = conn.cursor()
+    cursor.execute("""
+        SELECT AVG(preco)
+        FROM historico_precos
+        WHERE produto = ?
+        AND url = ?
+        AND preco IS NOT NULL
+    """, (produto, url))
 
- cursor.executar("""
- SELECIONE AVG(preco)
- DE histórico_precos
- ONDE produto = ?
- E url = ?
- E preco NÃO É NULO
- """, (produto, url))
+    resultado = cursor.fetchone()[0]
 
- resultado = cursor.buscar()[0]
+    conn.close()
 
- conexão.fechar()
-
-    retornar resultado
-
-
-def alerta_ja_enviado_recente(produto, loja, url, tipo):
-    retornar Falso
+    return resultado
 
 
-def salvar_alerta(produto, loja, url, tipo, preco=Nenhum):
-    passar
+def alerta_ja_enviado_recentemente(produto, loja, url, tipo):
+    return False
+
+
+def salvar_alerta(produto, loja, url, tipo, preco=None):
+    pass
