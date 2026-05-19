@@ -56,10 +56,16 @@ def pegar_html_playwright(url):
                 locale="pt-BR"
             )
 
-            page.goto(url, wait_until="domcontentloaded", timeout=60000)
-            page.wait_for_timeout(5000)
+            page.goto(url, wait_until="networkidle", timeout=60000)
+            page.wait_for_timeout(8000)
 
+            titulo = page.title()
             html = page.content()
+
+            print("TÍTULO DA PÁGINA:", titulo)
+
+            if "captcha" in html.lower() or "robot" in html.lower() or "robô" in html.lower():
+                print("POSSÍVEL BLOQUEIO/CAPTCHA DETECTADO")
 
             browser.close()
 
