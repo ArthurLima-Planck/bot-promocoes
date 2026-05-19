@@ -25,6 +25,7 @@ def enviar_log(mensagem):
     log_chat_id = os.getenv("TELEGRAM_LOG_CHAT_ID")
 
     if not log_chat_id:
+        print("TELEGRAM_LOG_CHAT_ID não configurado")
         print(mensagem)
         return
 
