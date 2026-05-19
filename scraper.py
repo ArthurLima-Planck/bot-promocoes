@@ -44,40 +44,47 @@ def extrair_id_mercado_livre(url):
     return None
 
 
-def extrair_preco_mercado_livre_api(url):
-    item_id = extrair_id_mercado_livre(url)
+def extrair_preco_mercado_livre_html(soup):
+    seletores = [
+        "meta[property='og:title']",
+        "meta[name='twitter:title']",
+        "meta[itemprop='price']",
+        "[itemprop='price']",
+        ".andes-money-amount__fraction",
+        ".ui-pdp-price__second-line .andes-money-amount__fraction",
+        ".ui-pdp-price .andes-money-amount__fraction"
+    ]
 
-    if not item_id:
-        print("Mercado Livre: ID não encontrado na URL")
-        return None
+    for seletor in seletores:
+        elemento = soup.select_one(seletor)
 
-    api_url = f"https://api.mercadolibre.com/items/{item_id}"
+        if elemento:
+            content = elemento.get("content")
 
-    try:
-        response = requests.get(
-            api_url,
-            timeout=20,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "application/json"
-            }
-        )
+            if content:
+                preco = numero_para_float(content)
 
-        if response.status_code != 200:
-            print("Erro API Mercado Livre:", response.status_code, response.text)
-            return None
+                if preco:
+                    return preco
 
-        dados = response.json()
-        preco = dados.get("price")
+                match = re.search(r"R\$\s?(\d+)", content)
 
-        if preco:
-            return float(preco)
+                if match:
+                    return float(match.group(1))
 
-        return None
+            texto = elemento.get_text().replace(".", "").strip()
 
-    except Exception as erro:
-        print("Erro Mercado Livre API:", erro)
-        return None
+            if texto.isdigit():
+                return float(texto)
+
+    texto_html = soup.get_text(" ", strip=True)
+
+    match = re.search(r'"price":\s?(\d+(?:\.\d+)?)', str(soup))
+
+    if match:
+        return float(match.group(1))
+
+    return None
 
 
 def pegar_html_requests(url):
