@@ -1,7 +1,8 @@
-import requests
 import re
 import json
+import requests
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
 
 def numero_para_float(texto):
@@ -24,6 +25,48 @@ def numero_para_float(texto):
         return float(valor)
     except:
         return None
+
+
+def pegar_html_requests(url):
+    response = requests.get(
+        url,
+        timeout=25,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+            "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8"
+        }
+    )
+
+    if response.status_code >= 400:
+        return None, f"HTTP {response.status_code}"
+
+    return response.text, None
+
+
+def pegar_html_playwright(url):
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                args=["--no-sandbox"]
+            )
+
+            page = browser.new_page(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+                locale="pt-BR"
+            )
+
+            page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_timeout(5000)
+
+            html = page.content()
+
+            browser.close()
+
+            return html, None
+
+    except Exception as erro:
+        return None, str(erro)
 
 
 def pegar_json_ld(soup):
@@ -65,17 +108,16 @@ def procurar_preco_em_json(obj):
 
 
 def extrair_preco_kabum(soup):
-    textos = soup.get_text(" ", strip=True)
+    texto = soup.get_text(" ", strip=True)
 
-    # tenta pegar preço no pix primeiro
-    padroes_pix = [
+    padroes = [
         r"R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}\s*no PIX",
         r"R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}\s*à vista",
         r"R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}"
     ]
 
-    for padrao in padroes_pix:
-        resultado = re.search(padrao, textos, re.IGNORECASE)
+    for padrao in padroes:
+        resultado = re.search(padrao, texto, re.IGNORECASE)
 
         if resultado:
             preco = numero_para_float(resultado.group())
@@ -111,10 +153,11 @@ def extrair_preco_amazon(soup):
 
 def extrair_preco_mercado_livre(soup):
     seletores = [
+        "meta[itemprop='price']",
+        "[itemprop='price']",
         ".andes-money-amount__fraction",
         ".ui-pdp-price__second-line .andes-money-amount__fraction",
-        ".ui-pdp-price .andes-money-amount__fraction",
-        "[itemprop='price']"
+        ".ui-pdp-price .andes-money-amount__fraction"
     ]
 
     for seletor in seletores:
@@ -128,13 +171,10 @@ def extrair_preco_mercado_livre(soup):
                 except:
                     pass
 
-            texto = elemento.get_text()
-            texto = texto.replace(".", "")
+            texto = elemento.get_text().replace(".", "").strip()
 
-            try:
+            if texto.isdigit():
                 return float(texto)
-            except:
-                pass
 
     for dados in pegar_json_ld(soup):
         preco = procurar_preco_em_json(dados)
@@ -158,57 +198,54 @@ def extrair_preco_generico(soup):
     return None
 
 
+def extrair_preco_por_loja(url, soup):
+    url_lower = url.lower()
+
+    if "kabum.com.br" in url_lower:
+        return extrair_preco_kabum(soup)
+
+    if "amazon.com.br" in url_lower:
+        return extrair_preco_amazon(soup)
+
+    if "mercadolivre.com" in url_lower:
+        return extrair_preco_mercado_livre(soup)
+
+    return extrair_preco_generico(soup)
+
+
 def verificar_link(url):
-    try:
-        response = requests.get(
-            url,
-            timeout=25,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
-                "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8"
-            }
-        )
+    url_lower = url.lower()
 
-        if response.status_code == 404:
-            return {
-                "status": "fora_do_ar",
-                "preco": None,
-                "erro": "404"
-            }
+    usar_playwright = (
+        "amazon.com.br" in url_lower
+        or "mercadolivre.com" in url_lower
+    )
 
-        if response.status_code >= 400:
-            return {
-                "status": "erro",
-                "preco": None,
-                "erro": f"HTTP {response.status_code}"
-            }
+    if usar_playwright:
+        html, erro = pegar_html_playwright(url)
+    else:
+        html, erro = pegar_html_requests(url)
 
-        soup = BeautifulSoup(response.text, "html.parser")
-        url_lower = url.lower()
-
-        preco = None
-
-        if "kabum.com.br" in url_lower:
-            preco = extrair_preco_kabum(soup)
-
-        elif "amazon.com.br" in url_lower:
-            preco = extrair_preco_amazon(soup)
-
-        elif "mercadolivre.com" in url_lower:
-            preco = extrair_preco_mercado_livre(soup)
-
-        if not preco:
-            preco = extrair_preco_generico(soup)
-
-        return {
-            "status": "online",
-            "preco": preco,
-            "erro": None
-        }
-
-    except Exception as erro:
+    if erro:
         return {
             "status": "erro",
             "preco": None,
-            "erro": str(erro)
+            "erro": erro
         }
+
+    if not html:
+        return {
+            "status": "erro",
+            "preco": None,
+            "erro": "HTML vazio"
+        }
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    preco = extrair_preco_por_loja(url, soup)
+
+    return {
+        "status": "online",
+        "preco": preco,
+        "erro": None
+    }
