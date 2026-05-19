@@ -1,16 +1,24 @@
 import re
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, parse_qs
 
 
 def numero_para_float(texto):
     if not texto:
         return None
 
-    texto = str(texto).replace("R$", "").replace(".", "").replace(",", ".")
-    match = re.search(r"\d+(?:\.\d+)?", texto)
+    texto = str(texto)
+    texto = texto.replace("R$", "")
+    texto = texto.replace("\xa0", " ")
+    texto = texto.strip()
 
+    match = re.search(r"\d{1,3}(?:\.\d{3})*,\d{2}", texto)
+    if match:
+        valor = match.group()
+        valor = valor.replace(".", "").replace(",", ".")
+        return float(valor)
+
+    match = re.search(r"\b\d+(?:\.\d+)?\b", texto)
     if match:
         return float(match.group())
 
@@ -18,71 +26,55 @@ def numero_para_float(texto):
 
 
 def pegar_html(url):
-    r = requests.get(
-        url,
-        timeout=25,
-        headers={
-            "User-Agent": "Mozilla/5.0",
-            "Accept-Language": "pt-BR,pt;q=0.9"
-        }
-    )
+    try:
+        response = requests.get(
+            url,
+            timeout=25,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+                "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8"
+            }
+        )
 
-    if r.status_code >= 400:
+        if response.status_code >= 400:
+            print("HTTP erro:", response.status_code)
+            return None
+
+        return response.text
+
+    except Exception as erro:
+        print("Erro ao pegar HTML:", erro)
         return None
 
-    return r.text
 
+def extrair_item_id_mercado_livre(html):
+    padroes = [
+        r'"item_id":"(MLB\d+)"',
+        r'"itemId":"(MLB\d+)"',
+        r'"itemId":\s*"(MLB\d+)"',
+        r'meli://item\?id=(MLB\d+)',
+        r'item\?id=(MLB\d+)',
+        r'"item_id":\s*"(MLB\d+)"',
+        r'"itemId":\s*"(MLB\d+)"'
+    ]
 
-def extrair_id_ml_da_url(url):
-    query = parse_qs(urlparse(url).query)
+    for padrao in padroes:
+        match = re.search(padrao, html)
 
-    if "wid" in query:
-        return query["wid"][0]
-
-    if "item_id" in query:
-        return query["item_id"][0]
-
-    match = re.search(r"(MLB\d+)", url)
-
-    if match:
-        return match.group(1)
+        if match:
+            return match.group(1)
 
     return None
 
 
-def preco_ml_api(item_id):
-    if not item_id:
-        return None
-
-    api_url = f"https://api.mercadolibre.com/items/{item_id}"
-
-    r = requests.get(
-        api_url,
-        timeout=20,
-        headers={"User-Agent": "Mozilla/5.0"}
-    )
-
-    print("ML API:", api_url, r.status_code)
-
-    if r.status_code != 200:
-        print(r.text[:300])
-        return None
-
-    dados = r.json()
-    preco = dados.get("price")
-
-    if preco:
-        return float(preco)
-
-    return None
-
-
-def preco_ml_html(html):
+def extrair_preco_mercado_livre_html(html):
     padroes = [
         r'"price":\s*(\d+(?:\.\d+)?)',
         r'"localItemPrice":\s*(\d+(?:\.\d+)?)',
         r'"itemPrice":\s*(\d+(?:\.\d+)?)',
-        r'og:title" content="[^"]*R\$\s?(\d+(?:\.\d{3})*(?:,\d{2})?)',
+        r'"actual_price":\s*(\d+(?:\.\d+)?)',
+        r'property="og:title"\s+content="[^"]*R\$\s?(\d+(?:\.\d{3})*(?:,\d{2})?)',
+        r'name="twitter:title"\s+content="[^"]*R\$\s?(\d+(?:\.\d{3})*(?:,\d{2})?)',
         r'R\$\s?(\d+(?:\.\d{3})*(?:,\d{2})?)'
     ]
 
@@ -90,62 +82,86 @@ def preco_ml_html(html):
         match = re.search(padrao, html)
 
         if match:
-            return numero_para_float(match.group(1))
+            preco = numero_para_float(match.group(1))
+
+            if preco:
+                return preco
 
     return None
 
 
+def preco_mercado_livre_api(item_id):
+    if not item_id:
+        return None
+
+    url = f"https://api.mercadolibre.com/items/{item_id}"
+
+    try:
+        response = requests.get(
+            url,
+            timeout=20,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/json"
+            }
+        )
+
+        print("ML API:", url, response.status_code)
+
+        if response.status_code != 200:
+            print(response.text[:300])
+            return None
+
+        dados = response.json()
+        preco = dados.get("price")
+
+        if preco:
+            return float(preco)
+
+        return None
+
+    except Exception as erro:
+        print("Erro API Mercado Livre:", erro)
+        return None
+
+
 def extrair_preco_mercado_livre(url):
-    item_id = extrair_id_ml_da_url(url)
-
-    print("ML ITEM ID URL:", item_id)
-
-    preco = preco_ml_api(item_id)
-
-    if preco:
-        return preco
-
     html = pegar_html(url)
 
     if not html:
         return None
 
-    match = re.search(r'"item_id":"(MLB\d+)"', html)
+    item_id = extrair_item_id_mercado_livre(html)
+    print("ML ITEM ID HTML:", item_id)
 
-    if match:
-        item_id_html = match.group(1)
-        print("ML ITEM ID HTML:", item_id_html)
+    preco_api = preco_mercado_livre_api(item_id)
 
-        preco = preco_ml_api(item_id_html)
+    if preco_api:
+        return preco_api
 
-        if preco:
-            return preco
+    preco_html = extrair_preco_mercado_livre_html(html)
 
-    preco = preco_ml_html(html)
-
-    if preco:
-        return preco
+    if preco_html:
+        return preco_html
 
     return None
 
 
 def extrair_preco_kabum(html):
-    match = re.search(
+    padroes = [
         r"R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}\s*no PIX",
-        html,
-        re.IGNORECASE
-    )
+        r"R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}\s*à vista",
+        r"R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}"
+    ]
 
-    if match:
-        return numero_para_float(match.group())
+    for padrao in padroes:
+        match = re.search(padrao, html, re.IGNORECASE)
 
-    match = re.search(
-        r"R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}",
-        html
-    )
+        if match:
+            preco = numero_para_float(match.group())
 
-    if match:
-        return numero_para_float(match.group())
+            if preco:
+                return preco
 
     return None
 
