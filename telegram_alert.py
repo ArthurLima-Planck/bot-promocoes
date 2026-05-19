@@ -2,9 +2,11 @@ import os
 import requests
 
 
-def enviar_telegram(mensagem):
+def enviar_telegram(mensagem, chat_id=None):
     token = os.getenv("TELEGRAM_TOKEN")
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+
+    if chat_id is None:
+        chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
 
@@ -16,4 +18,14 @@ def enviar_telegram(mensagem):
         }
     )
 
-    print("Telegram:", response.status_code)
+    print("Telegram:", response.status_code, response.text)
+
+
+def enviar_log(mensagem):
+    log_chat_id = os.getenv("TELEGRAM_LOG_CHAT_ID")
+
+    if not log_chat_id:
+        print(mensagem)
+        return
+
+    enviar_telegram(mensagem, log_chat_id)
