@@ -1,17 +1,13 @@
-produto: PlayStation 5
+produto: Aula f15
 queda: 12
-loja: Amazon
-url: LINK_DO_PS5_AMAZON
 loja: Mercado Livre
-url: LINK_DO_PS5_MERCADO_LIVRE
+url: https://www.mercadolivre.com.br/teclado-mecnico-aula-f75-rgb-sem-fio-bluetooth-wireless-24ghz-tri-mode-switch-leobog/p/MLB38715192#polycard_client=search-desktop&be_origin=backend&search_layout=grid&position=6&type=product&tracking_id=1b6dd158-2546-448a-b253-eba07eff4407&wid=MLB6680553830&sid=search
 loja: Kabum
-url: LINK_DO_PS5_KABUM
+url: https://www.kabum.com.br/produto/1003936/teclado-mecanico-aula-f75-dark-azul-layout-americano-iluminacao-rgb-conexao-usb?gclsrc=aw.ds&gad_source=1&gad_campaignid=23668683544&gbraid=0AAAAADx-HyEiaRL_05XSyambPeRSb-yZg&gclid=EAIaIQobChMIgd636OjFlAMVTEVIAB0j_zeWEAQYAiABEgKs__D_BwE
 
-produto: iPhone 15
+produto: SSD 1TB
 queda: 10
-loja: Amazon
-url: LINK_IPHONE_AMAZON
-loja: Magalu
-url: LINK_IPHONE_MAGALU
-loja: Casas Bahia
-url: LINK_IPHONE_CASAS_BAHIA
+loja: Kabum
+url: https://www.kabum.com.br/produto/621162/ssd-kingston-nv3-1-tb-m-2-2280-pcie-4-0-x4-nvme-leitura-6000-mb-s-gravacao-4000-mb-s-azul-snv3s-1000g
+loja: amazon
+url: https://www.amazon.com.br/Kingston-2280-NVMe-SNV3S-1000G/dp/B0DBR3DZWG/ref=asc_df_B0DBR3DZWG?mcid=4f11deb9c38c34c3911502bd507f1eb9&tag=googleshopp00-20&linkCode=df0&hvadid=709884378232&hvpos=&hvnetw=g&hvrand=18132580629589467702&hvpone=&hvptwo=&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9101137&hvtargid=pla-2344765275495&psc=1&hvocijid=18132580629589467702-B0DBR3DZWG-&hvexpln=0&language=pt_BR
