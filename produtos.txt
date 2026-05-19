@@ -1,7 +1,7 @@
 produto: Aula f15
 queda: 12
 loja: Mercado Livre
-url: https://www.mercadolivre.com.br/teclado-mecnico-aula-f75-rgb-sem-fio-bluetooth-wireless-24ghz-tri-mode-switch-leobog/p/MLB38715192#polycard_client=search-desktop&be_origin=backend&search_layout=grid&position=6&type=product&tracking_id=1b6dd158-2546-448a-b253-eba07eff4407&wid=MLB6680553830&sid=search
+url: https://www.mercadolivre.com.br/teclado-mecnico-aula-f75-preto-sem-fio-rgb-75-tri-mode-bluetooth-24ghz-usb-c-ingls-us/p/MLB53444949?pdp_filters=item_id%3AMLB4290152231&matt_tool=38524122#origin=share&sid=share&wid=MLB4290152231&action=copy
 loja: Kabum
 url: https://www.kabum.com.br/produto/1003936/teclado-mecanico-aula-f75-dark-azul-layout-americano-iluminacao-rgb-conexao-usb?gclsrc=aw.ds&gad_source=1&gad_campaignid=23668683544&gbraid=0AAAAADx-HyEiaRL_05XSyambPeRSb-yZg&gclid=EAIaIQobChMIgd636OjFlAMVTEVIAB0j_zeWEAQYAiABEgKs__D_BwE
 
