@@ -1,0 +1,28 @@
+nome: Verificar preços
+
+em:
+ agendar:
+    - cron: "0*****"
+ fluxo de trabalho_despacho:
+
+empregadores:
+ verificar preços:
+ continua correndo: ubuntu-mais recente
+
+ etapas:
+      - nome: Baixar código
+ usos: nomeações/checkout@v4
+
+ações/checkout@v4nome:   usosusosPython Instalar
+ usos:   comunicações/setup-python@v5
+comunicações/setup-python@v5:
+ versão python: "3.11"
+
+ Dependências instaladasnomenome: Dependências instaladas
+ corretor: nomeip install -r requisitos.txt
+
+pip install -r requisitos.txtnome:  ambienteRobô Rodar
+ambienteRobô Rodar:
+ TOKEN_TELEGRAMA: ${{ segredos.TELEGRAM_TOKEN }}
+ TELEGRAM_CHAT_ID: ${{ segredos.TELEGRAM_CHAT_ID }}
+ corretor: python main.py
