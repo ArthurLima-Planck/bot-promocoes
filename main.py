@@ -1,60 +1,60 @@
-importar json
+import json
 
-de banco de dados importar (
- criar_tabelas,
- salvar_verificacao,
- pegar_media_preco
+from database import (
+    criar_tabelas,
+    salvar_verificacao,
+    pegar_media_preco
 )
 
-de raspador importar link_verificador
-de alerta_telegram importar enviar_telegram
+from scraper import verificar_link
+from telegram_alert import enviar_telegram
 
 
 def carregar_produtos():
- com abrir("produtos.json", "r", codificação="utf-8") como arquivo:
- retornar json.carregar(arquivo)
+    with open("produtos.json", "r", encoding="utf-8") as arquivo:
+        return json.load(arquivo)
 
 
 def verificar_produtos():
- produtos = carregar_produtos()
+    produtos = carregar_produtos()
 
- para produto em produtos:
- nome = produto["nome"]
+    for produto in produtos:
+        nome = produto["nome"]
 
- parágrafo item em produto["links"]:
- loja = item["loja"]
- url = item["url"]
+        for item in produto["links"]:
+            loja = item["loja"]
+            url = item["url"]
 
- resultado = link_verificador(url)
+            resultado = verificar_link(url)
 
- status = resultado["status"]
- preco = resultado["preco"]
+            status = resultado["status"]
+            preco = resultado["preco"]
 
-            imprimir(nome, loja, status, preco)
+            print(nome, loja, status, preco)
 
             salvar_verificacao(nome, loja, url, preco, status)
 
- mídia = pegar_media_preco(nome, url)
+            media = pegar_media_preco(nome, url)
 
- se preco e mídia:
- se preco < mídia * 0,85:
- mensagem = (
+            if preco and media:
+                if preco < media * 0.85:
+                    mensagem = (
                         f"🔥 PROMOÇÃO\n\n"
                         f"Produto: {nome}\n"
                         f"Loja: {loja}\n"
                         f"Preço: R$ {preco}\n"
-                        f"Média: R$ {mídia:. . . .2f}\n\n"
+                        f"Média: R$ {media:.2f}\n\n"
                         f"{url}"
                     )
 
                     enviar_telegram(mensagem)
 
 
-def principal():
+def main():
     criar_tabelas()
     verificar_produtos()
-    imprimir("Finalizado")
+    print("Finalizado")
 
 
-se __nome__ == "__principal__":
-    principal()
+if __name__ == "__main__":
+    main()
