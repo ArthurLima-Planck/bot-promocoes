@@ -10,4 +10,4 @@ queda: 10
 loja: Kabum
 url: https://www.kabum.com.br/produto/621162/ssd-kingston-nv3-1-tb-m-2-2280-pcie-4-0-x4-nvme-leitura-6000-mb-s-gravacao-4000-mb-s-azul-snv3s-1000g
 loja: amazon
-url: https://www.amazon.com.br/Kingston-2280-NVMe-SNV3S-1000G/dp/B0DBR3DZWG/ref=asc_df_B0DBR3DZWG?mcid=4f11deb9c38c34c3911502bd507f1eb9&tag=googleshopp00-20&linkCode=df0&hvadid=709884378232&hvpos=&hvnetw=g&hvrand=18132580629589467702&hvpone=&hvptwo=&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9101137&hvtargid=pla-2344765275495&psc=1&hvocijid=18132580629589467702-B0DBR3DZWG-&hvexpln=0&language=pt_BR
+url: https://a.co/d/0cBqZeEf
