@@ -1,67 +1,48 @@
-import json
-
-from database import (
-    criar_tabelas,
-    salvar_verificacao,
-    pegar_media_preco
-)
-
-from scraper import verificar_link
-from telegram_alert import enviar_telegram
-
-
 def carregar_produtos():
-    with open("produtos.json", "r", encoding="utf-8") as arquivo:
-        return json.load(arquivo)
+    produtos = []
+    produto_atual = None
+    loja_atual = None
 
+    with open("produtos.txt", "r", encoding="utf-8") as arquivo:
+        for linha in arquivo:
+            linha = linha.strip()
 
-def verificar_produtos():
-    produtos = carregar_produtos()
+            if not linha:
+                continue
 
-    for produto in produtos:
-        nome = produto["nome"]
+            if linha.startswith("produto:"):
+                if produto_atual:
+                    produtos.append(produto_atual)
 
-        for item in produto["links"]:
-            loja = item["loja"]
-            url = item["url"]
+                nome = linha.replace("produto:", "").strip()
 
-            resultado = verificar_link(url)
+                produto_atual = {
+                    "nome": nome,
+                    "queda_percentual": 12,
+                    "links": []
+                }
 
-            status = resultado["status"]
-            preco = resultado["preco"]
+            elif linha.startswith("queda:"):
+                queda = linha.replace("queda:", "").strip()
 
-            print(nome, loja, status, preco)
+                if produto_atual:
+                    produto_atual["queda_percentual"] = float(queda)
 
-            salvar_verificacao(
-                nome,
-                loja,
-                url,
-                preco,
-                status
-            )
+            elif linha.startswith("loja:"):
+                loja_atual = linha.replace("loja:", "").strip()
 
-            media = pegar_media_preco(
-                nome,
-                url
-            )
+            elif linha.startswith("url:"):
+                url = linha.replace("url:", "").strip()
 
-            if status == "fora_do_ar":
-                enviar_telegram(
-                    f"⚠ Produto fora do ar\n{nome}\n{loja}"
-                )
+                if produto_atual and loja_atual:
+                    produto_atual["links"].append({
+                        "loja": loja_atual,
+                        "url": url
+                    })
 
-            elif preco and media:
-                if preco < media * 0.85:
-                    enviar_telegram(
-                        f"🔥 PROMOÇÃO\n{nome}\nR$ {preco}"
-                    )
+                    loja_atual = None
 
+    if produto_atual:
+        produtos.append(produto_atual)
 
-def main():
-    criar_tabelas()
-    verificar_produtos()
-    print("Finalizado")
-
-
-if __name__ == "__main__":
-    main()
+    return produtos
