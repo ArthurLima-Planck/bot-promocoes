@@ -1,53 +1,53 @@
-importar solicitações
-importar ré
+import requests
+import re
 
 
-def link_verificador(url):
-    tentar:
- resposta = solicitações.pegar(
- url,
- tempo limite=15,
- cabeçalhos={
-                "Agente do usuário": "Mozilla/5.0"
+def verificar_link(url):
+    try:
+        response = requests.get(
+            url,
+            timeout=15,
+            headers={
+                "User-Agent": "Mozilla/5.0"
             }
         )
 
-        se resposta.código_de status == 404:
-            retornar {
+        if response.status_code == 404:
+            return {
                 "status": "fora_do_ar",
-                "preco": Nenhum,
+                "preco": None,
                 "erro": "404"
             }
 
- html = resposta.texto
+        html = response.text
 
- resultado = re.procurar(
+        resultado = re.search(
             r"R\$ ?(\d+[.,]\d+)",
- HTML
+            html
         )
 
- preco = Nenhum
+        preco = None
 
-        se resultado:
- preco = resultado.grupo(1)
+        if resultado:
+            preco = resultado.group(1)
 
- preco = (
- preco
-                .substituir(".", "")
-                .substituir(",", ".")
+            preco = (
+                preco
+                .replace(".", "")
+                .replace(",", ".")
             )
 
- preco = flutuador(preco)
+            preco = float(preco)
 
-        retornar {
+        return {
             "status": "online",
             "preco": preco,
-            "erro": Nenhum
+            "erro": None
         }
 
-    exceto Exceção como erro:
-        retornar {
+    except Exception as erro:
+        return {
             "status": "erro",
-            "preco": Nenhum,
+            "preco": None,
             "erro": str(erro)
-    }
+        }
