@@ -1,8 +1,6 @@
 [
   {
-    "nome": "PlayStation 5",
-    "preco_alerta": 3500,
-    "queda_percentual": 15,
+    "nome": "Produto Teste",
     "links": [
       {
         "loja": "Amazon",
