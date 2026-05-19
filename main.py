@@ -1,5 +1,3 @@
-import json
-
 from database import criar_tabelas
 from telegram_alert import enviar_telegram
 
